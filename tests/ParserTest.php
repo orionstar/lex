@@ -1,14 +1,15 @@
-<?php
+<?php declare(strict_types=1);
 
-class ParserTest extends PHPUnit_Framework_TestCase
-{
+use PHPUnit\Framework\TestCase;
 
-    public function setUp()
+class ParserTest extends TestCase {
+
+    public function setUp(): void
     {
         $this->parser = new Lex\Parser();
     }
 
-    public function templateDataProvider()
+    public function templateDataProvider(): array
     {
         return array(
             array(
@@ -22,7 +23,7 @@ class ParserTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function testCanSetScopeGlue()
+    public function testCanSetScopeGlue(): void
     {
         $this->parser->scopeGlue('~');
         $scopeGlue = new ReflectionProperty($this->parser, 'scopeGlue');
@@ -33,13 +34,13 @@ class ParserTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('~', $scopeGlue->getValue($this->parser));
     }
 
-    public function testCanGetScopeGlue()
+    public function testCanGetScopeGlue(): void
     {
         $this->parser->scopeGlue('~');
         $this->assertEquals('~', $this->parser->scopeGlue());
     }
 
-    public function testValueToLiteral()
+    public function testValueToLiteral(): void
     {
         $method = new ReflectionMethod($this->parser, 'valueToLiteral');
 
@@ -52,13 +53,17 @@ class ParserTest extends PHPUnit_Framework_TestCase
         $this->assertSame("false", $method->invoke($this->parser, false));
         $this->assertSame("'some_string'", $method->invoke($this->parser, "some_string"));
         $this->assertSame("24", $method->invoke($this->parser, 24));
-        $this->assertSame("true", $method->invoke($this->parser, array('foo')));
-        $this->assertSame("false", $method->invoke($this->parser, array()));
+        $this->assertSame("true", $method->invoke($this->parser, ['foo']));
+        $this->assertSame("false", $method->invoke($this->parser, []));
 
-        $mock = $this->getMock('stdClass', array('__toString'));
-        $mock->expects($this->any())
+		$mock = $this->getMockBuilder(stdClass::class)
+                     ->addMethods(['__toString'])
+                     ->getMock();
+
+	    /** @noinspection MockingMethodsCorrectnessInspection */
+	    $mock
              ->method('__toString')
-             ->will($this->returnValue('obj_string'));
+             ->willReturn('obj_string');
 
         $this->assertSame("'obj_string'", $method->invoke($this->parser, $mock));
     }
@@ -66,7 +71,7 @@ class ParserTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider templateDataProvider
      */
-    public function testGetVariable($data)
+    public function testGetVariable($data): void
     {
         $method = new ReflectionMethod($this->parser, 'getVariable');
 
@@ -87,16 +92,16 @@ class ParserTest extends PHPUnit_Framework_TestCase
     /**
      * Regression test for https://www.pyrocms.com/forums/topics/view/19686
      */
-    public function testFalseyVariableValuesParseProperly()
+    public function testFalseyVariableValuesParseProperly(): void
     {
-        $data = array(
+        $data = [
             'zero_num' => 0,
             'zero_string' => "0",
             'zero_float' => 0.0,
             'empty_string' => "",
             'null_value' => null,
             'simplexml_empty_node' => simplexml_load_string('<main></main>'),
-        );
+        ];
 
         $text = "{{zero_num}},{{zero_string}},{{zero_float}},{{empty_string}},{{null_value}},{{simplexml_empty_node}}";
         $expected = '0,0,0,,,';
@@ -109,7 +114,7 @@ class ParserTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider templateDataProvider
      */
-    public function testExists($data)
+    public function testExists($data): void
     {
         $result = $this->parser->parse("{{ if exists name }}1{{ else }}0{{ endif }}", $data);
         $this->assertEquals('1', $result);
@@ -123,7 +128,7 @@ class ParserTest extends PHPUnit_Framework_TestCase
      *
      * @dataProvider templateDataProvider
      */
-    public function testUndefinedInConditional($data)
+    public function testUndefinedInConditional($data): void
     {
         $result = $this->parser->parse("{{ if age }}0{{ else }}1{{ endif }}", $data);
         $this->assertEquals('1', $result);
@@ -132,12 +137,14 @@ class ParserTest extends PHPUnit_Framework_TestCase
     /**
      * Regression test for https://github.com/pyrocms/pyrocms/issues/1906
      */
-    public function testCallbacksInConditionalComparison()
+    public function testCallbacksInConditionalComparison(): void
     {
-        $result = $this->parser->parse("{{ if foo.bar.baz == 'yes' }}Yes{{ else }}No{{ endif }}", array(), function ($name, $attributes, $content) {
-            if ($name == 'foo.bar.baz') {
+        $result = $this->parser->parse("{{ if foo.bar.baz == 'yes' }}Yes{{ else }}No{{ endif }}", [], function ($name) {
+            if ($name === 'foo.bar.baz')
+			{
                 return 'yes';
             }
+			
             return 'no';
         });
         $this->assertEquals('Yes', $result);
@@ -151,8 +158,14 @@ class ParserTest extends PHPUnit_Framework_TestCase
      * - TOTAL_GT_0   Tests total > 0
      * - HAS_ENTRIES  Tests isset(entries)
      */
-    public function testDeepCallbacksInConditionalComparison()
+    public function testDeepCallbacksInConditionalComparison(): void
     {
+		$monthObject = new stdClass();
+		$monthObject->month = 'feb';
+		$monthObject->month_num = '02';
+		$monthObject->date = 949392000;
+		$monthObject->total = 0;
+		
         $data = array(
             'pagination' => null,
             'total' => 172,
@@ -166,24 +179,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
                             'date' => 946713600,
                             'total' => 3,
                             'entries' => array(
-                                1326787200 => array(),
-                                1326355200 => array(),
-                                1325577600 => array(),
+                                1326787200 => [],
+                                1326355200 => [],
+                                1325577600 => [],
                             ),
                         ),
-                        '02' => array(
-                            'month' => 'feb',
-                            'month_num' => '02',
-                            'date' => 949392000,
-                            'total' => 0,
-                        ),
+                        '02' => $monthObject,
                         '07' => array(
                             'month' => 'jul',
                             'month_num' => '07',
                             'date' => 962434800,
                             'total' => 1,
                             'entries' => array(
-                                1343026800 => array(),
+                                1343026800 => [],
                             ),
                         ),
                         10 => array(
@@ -192,8 +200,8 @@ class ParserTest extends PHPUnit_Framework_TestCase
                             'date' => 970383600,
                             'total' => 2,
                             'entries' => array(
-                                1350543600 => array(),
-                                1350457200 => array(),
+                                1350543600 => [],
+                                1350457200 => [],
                             ),
                         ),
                         11 => array(
@@ -202,9 +210,9 @@ class ParserTest extends PHPUnit_Framework_TestCase
                             'date' => 973065600,
                             'total' => 4,
                             'entries' => array(
-                                1354003200 => array(),
-                                1353398400 => array(),
-                                1352707200 => array(),
+                                1354003200 => [],
+                                1353398400 => [],
+                                1352707200 => [],
                             ),
                         ),
                         12 => array(
@@ -230,8 +238,8 @@ class ParserTest extends PHPUnit_Framework_TestCase
                             'date' => 954576000,
                             'total' => 13,
                             'entries' => array(
-                                1303974000 => array(),
-                                1303887600 => array(),
+                                1303974000 => [],
+                                1303887600 => [],
                             ),
                         ),
                         '07' => array(
@@ -246,9 +254,9 @@ class ParserTest extends PHPUnit_Framework_TestCase
                             'date' => 965113200,
                             'total' => 8,
                             'entries' => array(
-                                1313391600 => array(),
-                                1313046000 => array(),
-                                1312354800 => array(),
+                                1313391600 => [],
+                                1313046000 => [],
+                                1312354800 => [],
                             ),
                         ),
                     ),
@@ -300,48 +308,49 @@ HTML;
 
     }
 
-    public function testSelfClosingTag()
+    public function testSelfClosingTag(): void
     {
-        $self = $this;
-        $result = $this->parser->parse("{{ foo.bar.baz /}}Here{{ foo.bar.baz }}Content{{ /foo.bar.baz }}", array(), function ($name, $attributes, $content) use ($self) {
-            if ($content == '') {
+        $result = $this->parser->parse("{{ foo.bar.baz /}}Here{{ foo.bar.baz }}Content{{ /foo.bar.baz }}", [], function ($name, $attributes, $content) {
+            if ($content === '')
+			{
                 return 'DanWas';
-            } else {
-                return '';
             }
+
+	        return '';
         });
+
         $this->assertEquals('DanWasHere', $result);
     }
 
     /**
      * Test that the toArray method converts an standard object to an array
      */ 
-    public function testObjectToArray()
+    public function testObjectToArray(): void
     {
         $data = new stdClass;
         $data->foo = 'bar';
 
         $result = $this->parser->toArray($data);
 
-        $this->assertEquals(array('foo' => 'bar'), $result);
+        $this->assertEquals(['foo' => 'bar'], $result);
     }
 
     /**
-     * Test that the toArray method converts an object that implements ArrayableInterface to an array
+     * Test that the toArray method converts an object that implements Arrayable to an array
      */
-    public function testArrayableInterfaceToArray()
+    public function testArrayableInterfaceToArray(): void
     {
         $data = new Lex\ArrayableObjectExample;
 
         $result = $this->parser->toArray($data);
 
-        $this->assertEquals(array('foo' => 'bar'), $result);
+        $this->assertEquals(['foo' => 'bar'], $result);
     }
 
     /**
      * Test that the toArray method converts an integer to an array
      */
-    public function testIntegerToArray()
+    public function testIntegerToArray(): void
     {
         $data = 1;
 
@@ -353,7 +362,7 @@ HTML;
     /**
      * Test that the toArray method converts an string to an array
      */
-    public function testStringToArray()
+    public function testStringToArray(): void
     {
         $data = 'Hello World';
 
@@ -365,11 +374,9 @@ HTML;
     /**
      * Test that the toArray method converts an boolean to an array
      */
-    public function testBooleanToArray()
+    public function testBooleanToArray(): void
     {
-        $data = true;
-
-        $result = $this->parser->toArray($data);
+        $result = $this->parser->toArray(true);
 
         $this->assertEquals(true, is_array($result));
     }
@@ -377,7 +384,7 @@ HTML;
     /**
      * Test that the toArray method converts an null value to an array
      */
-    public function testNullToArray()
+    public function testNullToArray(): void
     {
         $data = null;
 
@@ -389,7 +396,7 @@ HTML;
     /**
      * Test that the toArray method converts an float value to an array
      */
-    public function testFloatToArray()
+    public function testFloatToArray(): void
     {
         $data = 1.23456789;
 

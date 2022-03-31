@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * Part of the Lex Template Parser.
  *
@@ -9,4 +10,6 @@
 
 namespace Lex;
 
-class ParsingException extends \Exception {}
+use Exception;
+
+class ParsingException extends Exception {}

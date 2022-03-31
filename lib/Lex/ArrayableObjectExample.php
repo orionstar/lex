@@ -1,4 +1,6 @@
-<?php namespace Lex;
+<?php declare(strict_types=1);
+
+namespace Lex;
 
 /**
  * Part of the Lex Template Parser.
@@ -7,22 +9,17 @@
  * @license    MIT License
  * @copyright  2011 - 2014 PyroCMS
  */
-class ArrayableObjectExample implements ArrayableInterface
-{
+class ArrayableObjectExample implements Arrayable {
 	
 	/**
 	 * Attributes
-	 * 
-	 * @var array
 	 */ 
-	private $attributes = array('foo' => 'bar');
+	private array $attributes = ['foo' => 'bar'];
 
 	/**
 	 * Define how the object will be converted to an array
-	 * 
-	 * @return array
 	 */ 
-	public function toArray()
+	public function toArray(): array
 	{
 		return $this->attributes;
 	}

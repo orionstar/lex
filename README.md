@@ -1,14 +1,18 @@
 Lex
 ===
 
-[![Build Status](https://secure.travis-ci.org/pyrocms/lex.png?branch=master)](http://travis-ci.org/pyrocms/lex)
-
 Lex is a lightweight template parser.
 
-_Lex is released under the MIT License and is Copyrighted 2011 - 2014 PyroCMS Team._
+Lex is released under the MIT License. Originally created by the PyroCMS Team.
+This fork is maintained by @orionstar.
 
 Change Log
 ==========
+
+3.0.0-dev
+-----
+
+* Rewrite and refactor to PHP 7.4
 
 2.3.2
 -----

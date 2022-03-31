@@ -1,4 +1,6 @@
-<?php namespace Lex;
+<?php declare(strict_types=1);
+
+namespace Lex;
 
 /**
  * Part of the Lex Template Parser.
@@ -8,13 +10,11 @@
  * @copyright  2011 - 2014 PyroCMS
  */
 
-interface ArrayableInterface {
+interface Arrayable {
 
 	/**
 	 * Convert the object to an array
-	 * 
-	 * @return array
 	 */ 
-	public function toArray();
+	public function toArray(): array;
 
 }
